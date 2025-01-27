@@ -1,0 +1,11 @@
+{
+    "idf.portWin": "COM4",
+    "files.associations": {
+        "*.tcc": "cpp",
+        "list": "cpp",
+        "new": "cpp",
+        "system_error": "cpp",
+        "regex": "cpp",
+        "cmath": "cpp"
+    }
+}
