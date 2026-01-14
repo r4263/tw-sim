@@ -1,5 +1,4 @@
 {
-    "idf.portWin": "COM4",
     "files.associations": {
         "*.tcc": "cpp",
         "list": "cpp",
