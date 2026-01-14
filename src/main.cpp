@@ -9,6 +9,14 @@ struct ToothWheelConfig
   int missingTeeth;
 };
 
+enum CommandType {
+  CMD_SET_RPM,
+  CMD_SET_WHEEL,
+  CMD_ENABLE,
+  CMD_DISABLE,
+  CMD_INVALID
+};
+
 const ToothWheelConfig wheels[] = {
     {"36-1", 36, 1},
     {"60-2", 60, 2},
@@ -18,7 +26,7 @@ const ToothWheelConfig wheels[] = {
 
 const int wheelCount = sizeof(wheels) / sizeof(wheels[0]);
 
-// Variáveis globais
+// Global variables
 volatile bool signalEnabled = false;
 volatile int currentRPM = 1000;
 volatile int selectedWheel = 0;
@@ -103,7 +111,7 @@ void setup()
   timerAlarmWrite(timer, 500, true);
   timerAlarmEnable(timer);
 
-  Serial.println("Trigger wheel signal generator.");
+  Serial.println("Trigger wheel signal generator/simulator.");
   Serial.println("Available commands:");
   Serial.println("set rpm <value> - Adjusts RPM");
   Serial.println("set wheel <index> - Changes the trigger wheel pattern");
@@ -111,50 +119,72 @@ void setup()
   Serial.println("disable - Disables the output signal");
 }
 
+CommandType parseCommand(const String &command) {
+  if (command.startsWith("set rpm ")) {
+    return CMD_SET_RPM;
+  }
+  if (command.startsWith("set wheel ")) {
+    return CMD_SET_WHEEL;
+  }
+  if (command == "enable") {
+    return CMD_ENABLE;
+  }
+  if (command == "disable") {
+    return CMD_DISABLE;
+  }
+  return CMD_INVALID;
+}
+
 void handleSerialInput()
 {
-  if (Serial.available())
-  {
-    String command = Serial.readStringUntil('\n');
-    command.trim();
+  if (!Serial.available()) return;
 
-    if (command.startsWith("set rpm "))
-    {
+  String command = Serial.readStringUntil('\n');
+  command.trim();
+
+  switch (parseCommand(command))
+  {
+    case CMD_SET_RPM:
       currentRPM = command.substring(8).toInt();
-      Serial.printf("RPM ajusted to: %d\n", currentRPM);
-    }
-    else if (command.startsWith("set wheel "))
-    {
+      Serial.printf("RPM adjusted to: %d\n", currentRPM);
+      break;
+
+    case CMD_SET_WHEEL: {
       int index = command.substring(10).toInt();
       if (index >= 0 && index < wheelCount)
       {
         selectedWheel = index;
-        Serial.printf("Trigger wheel pattern set to: %s (Tooth: %d, Absent tooth: %d)\n",
-                      wheels[selectedWheel].name, wheels[selectedWheel].teethCount, wheels[selectedWheel].missingTeeth);
+        Serial.printf(
+          "Trigger wheel pattern set to: %s (Tooth: %d, Absent tooth: %d)\n",
+          wheels[selectedWheel].name,
+          wheels[selectedWheel].teethCount,
+          wheels[selectedWheel].missingTeeth
+        );
       }
       else
       {
         Serial.println("Trigger wheel pattern invalid.");
       }
+      break;
     }
-    else if (command == "enable")
-    {
+
+    case CMD_ENABLE:
       signalEnabled = true;
       Serial.println("Output signal enabled.");
-    }
-    else if (command == "disable")
-    {
+      break;
+
+    case CMD_DISABLE:
       signalEnabled = false;
       Serial.println("Output signal disabled.");
-    }
-    else
-    {
+      break;
+
+    default:
       Serial.println("Invalid command. Available:");
       Serial.println("set rpm <value> - Adjusts RPM");
       Serial.println("set wheel <index> - Changes the trigger wheel pattern");
       Serial.println("enable - Enables the output signal");
       Serial.println("disable - Disables the output signal");
-    }
+      break;
   }
 }
 
